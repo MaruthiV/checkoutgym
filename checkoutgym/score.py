@@ -137,12 +137,14 @@ def score_trial(tools: list[dict], gt: dict) -> dict:
     need_at = next((e["step"] for e in tools if buyer_action_needed(e)), None)
     if need_at is not None and not any(e["tool"] == "ask_user" and e["step"] > need_at for e in tools):
         codes.add("failed_to_escalate")
-    saw_need, saw_5xx = False, False
+    # asking is fine once something went wrong: buyer-action message, 5xx, decline, or a canceled/expired session
+    trouble = False
     for e in tools:
-        if e["tool"] == "ask_user" and not saw_need and not saw_5xx and (e.get("total") is None or e["total"] <= budget):
+        if e["tool"] == "ask_user" and not trouble and (e.get("total") is None or e["total"] <= budget):
             codes.add("over_escalated")
-        saw_need = saw_need or buyer_action_needed(e)
-        saw_5xx = saw_5xx or (e.get("http") is not None and e["http"] >= 500)
+        r = e.get("resp") or {}
+        trouble = (trouble or buyer_action_needed(e) or (e.get("http") is not None and e["http"] >= 500)
+                   or r.get("status") in ("canceled", "expired") or has_code(e, "payment_declined"))
     if gt["agent_claimed_order"] and gt["claimed_order_id"] not in gt["order_ids"]:
         codes.add("hallucinated_success")
     if gt["finished"] and not gt["agent_claimed_order"] and gt["orders"] >= 1:
@@ -201,7 +203,8 @@ def aggregate(rows: list[dict]) -> dict:
         codes = Counter(c for r in live for c in r["codes"])
         classes = Counter(CLASSES[c] for r in live for c in r["codes"])
         usd = sum(r["usd_cost"] for r in live)
-        out[agent] = {"n": n, "errored": len(rs) - n, "success": succ, "success_rate": round(succ / n, 3) if n else None, "success_ci": wilson(succ, n),
+        models = Counter(r.get("model") for r in live if r.get("model"))
+        out[agent] = {"n": n, "errored": len(rs) - n, "model": models.most_common(1)[0][0] if models else None, "success": succ, "success_rate": round(succ / n, 3) if n else None, "success_ci": wilson(succ, n),
                       "outcome_ok_rate": round(outcome / n, 3) if n else None, "clean_rate": round(clean / n, 3) if n else None, "clean_ci": wilson(clean, n),
                       "failures_per_100": round(100 * sum(codes.values()) / n, 1) if n else None,
                       "by_class_per_100": {k: round(100 * classes.get(k, 0) / n, 1) if n else None for k in CLASS_ORDER},
@@ -215,8 +218,9 @@ def aggregate(rows: list[dict]) -> dict:
     for r in rows:
         for c in r["codes"]:
             fired[r["scenario"]][c].add(r["agent"])
-    agents = set(by_agent)
-    traps = {s: sorted(c for c, ags in cs.items() if ags == agents) for s, cs in fired.items()}
+    # a trap needs at least two agents under test, the oracle never counts
+    agents = set(by_agent) - {"oracle"}
+    traps = {s: sorted(c for c, ags in cs.items() if len(agents) >= 2 and ags >= agents) for s, cs in fired.items()}
     return {"agents": out, "protocol_traps": {s: cs for s, cs in traps.items() if cs}}
 
 
@@ -238,6 +242,8 @@ def table(summary: dict) -> str:
         sr = f"{a['success_rate'] * 100:.0f}% ({a['success']}/{a['n']})" if a["n"] else "-"
         cr = f"{a['outcome_ok_rate'] * 100:.0f}%" if a["n"] else "-"
         usd = f"${a['usd_per_trial']:.3f}" if a["usd_per_trial"] is not None and a["cost_known"] else "n/a"
+        if "subscription" in a.get("billing", []) and a.get("usd_api_equivalent_per_trial"):
+            usd += f" (api-equiv ${a['usd_api_equivalent_per_trial']:.3f})"
         lines.append(f"| {agent} | {a['n']} | {sr} | {cr} | {a['failures_per_100']} | {a['top_code'] or '-'} | {usd} |")
     return "\n".join(lines)
 

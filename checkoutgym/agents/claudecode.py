@@ -15,7 +15,7 @@ MODEL = os.environ.get("CHECKOUTGYM_CLAUDECODE_MODEL", "sonnet")
 SERVER = "checkoutgym"
 TOOL_NAMES = [f"mcp__{SERVER}__{t['name']}" for t in TOOLS]
 TRIAL_TIMEOUT_S = 900
-GRACE_AFTER_FINISH_S = 20
+GRACE_AFTER_FINISH_S = 45
 SYSTEM_CC = SYSTEM + "\nYour tools are provided by an MCP server and are named mcp__checkoutgym__<tool>. You have no other tools."
 
 
@@ -28,7 +28,8 @@ def run(tools: ToolRunner, task: dict) -> None:
         json.dump({"mcpServers": {SERVER: {"type": "http", "url": f"http://127.0.0.1:{port}/mcp"}}}, f)
     # nested claude code refuses to start with the parent session's env vars present
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
-    cmd = [shutil.which("claude") or "claude", task_prompt(task), "-p", "--model", MODEL, "--output-format", "stream-json", "--verbose",
+    model = task.get("variant") or MODEL
+    cmd = [shutil.which("claude") or "claude", task_prompt(task), "-p", "--model", model, "--output-format", "stream-json", "--verbose",
            "--system-prompt", SYSTEM_CC, "--tools", "", "--mcp-config", cfg, "--strict-mcp-config",
            "--allowedTools", ",".join(TOOL_NAMES), "--no-session-persistence"]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, text=True, cwd=workdir, env=env)

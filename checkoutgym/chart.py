@@ -49,7 +49,11 @@ def draw(run_dir: str | Path, out: str | None = None) -> str:
                 bottom += v
         ax.text(i, bottom + 1.5, f"{bottom:.0f}", ha="center", va="bottom", fontsize=9, color=INK2)
     _clean_axes(ax)
-    ax.set_xticks(xs, [f"{a}\nn={summary['agents'][a]['n']}" for a in agents], fontsize=9)
+    def label(a):
+        m = summary["agents"][a].get("model")
+        name = m if a.startswith("claudecode") and m else a
+        return f"{name}\nn={summary['agents'][a]['n']}"
+    ax.set_xticks(xs, [label(a) for a in agents], fontsize=8.5)
     ax.set_xlim(-0.6, len(agents) - 0.4)
     ax.set_ylabel("failures per 100 sessions", fontsize=9)
     ax.set_ylim(0, max(1.0, ax.get_ylim()[1] * 1.08))
@@ -65,7 +69,7 @@ def draw(run_dir: str | Path, out: str | None = None) -> str:
     for i, r in enumerate(rates):
         ax2.text(i, r + 2, f"{r:.0f}%", ha="center", va="bottom", fontsize=9, color=INK2)
     _clean_axes(ax2)
-    ax2.set_xticks(xs, agents, fontsize=9)
+    ax2.set_xticks(xs, [label(a).split("\n")[0].replace("claude-", "") for a in agents], fontsize=8)
     ax2.set_ylim(0, 112)
     ax2.set_yticks([0, 25, 50, 75, 100])
     ax2.set_title("success rate", fontsize=10, color=INK, loc="left")

@@ -18,7 +18,8 @@ ALL_SCENARIOS = [f"S{i}" for i in range(1, 13)]
 
 
 def load_agent(name: str):
-    return importlib.import_module(AGENT_MODULES[name])
+    # "claudecode:opus" = claudecode adapter with the opus model variant
+    return importlib.import_module(AGENT_MODULES[name.split(":")[0]])
 
 
 def load_config(path: str = "tasks.yaml") -> dict:
@@ -70,8 +71,9 @@ def run_trial(agent_name: str, scenario: str, seed: int, cfg: dict, stripe, clie
     tok = stripe.mint(max_amount=task["budget"], expires_in=task["token_ttl"], card=task["card"])
     task["token"] = tok["id"]
     task["seed"] = seed
+    task["variant"] = agent_name.split(":", 1)[1] if ":" in agent_name else None
     client.post("/_control/reset", json={"scenario": scenario, "trial": trial})
-    meta = {"trial": trial, "agent": agent_name, "model": model or getattr(agent, "NAME", agent_name), "task": task["task"], "scenario": scenario, "seed": seed}
+    meta = {"trial": trial, "agent": agent_name, "model": model or task["variant"] or getattr(agent, "NAME", agent_name), "task": task["task"], "scenario": scenario, "seed": seed}
     tools = ToolRunner(client, meta, tok["id"], task["budget"], task["reply"], cfg["buyer"], cfg["fulfillment_details"], log)
     t0 = time.time()
     error = None

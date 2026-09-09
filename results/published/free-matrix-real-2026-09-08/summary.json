@@ -70,6 +70,10 @@
    },
    "usd_per_trial": 0.0,
    "usd_per_success": 0.0,
+   "usd_api_equivalent_per_trial": 0.0,
+   "billing": [
+    "api"
+   ],
    "cost_known": true
   },
   "oracle": {
@@ -100,6 +104,10 @@
    "codes": {},
    "usd_per_trial": 0.0,
    "usd_per_success": 0.0,
+   "usd_api_equivalent_per_trial": 0.0,
+   "billing": [
+    "api"
+   ],
    "cost_known": true
   }
  },
