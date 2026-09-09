@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from collections import Counter
 from pathlib import Path
@@ -34,9 +35,18 @@ def _load(run_dir: Path) -> tuple[dict, list[dict]]:
     return summary, rows
 
 
+PREFERRED = ["claudecode:haiku", "claudecode:sonnet", "claudecode:opus", "claudecode", "claude", "gpt", "naive", "oracle"]
+
+
+def _order(agents: list[str]) -> list[str]:
+    return sorted(agents, key=lambda a: (PREFERRED.index(a) if a in PREFERRED else len(PREFERRED), a))
+
+
 def _agent_label(summary: dict, a: str) -> str:
     m = summary["agents"][a].get("model")
-    return m.replace("claude-", "") if a.startswith("claudecode") and m else a
+    if a.startswith("claudecode") and m:
+        return re.sub(r"-\d{8}$", "", m.replace("claude-", ""))
+    return a
 
 
 def _save(fig, base: Path) -> str:
@@ -55,7 +65,7 @@ def _luminance(hex_color: str) -> float:
 def draw(run_dir: str | Path, out: str | None = None) -> str:
     run_dir = Path(run_dir)
     summary, _ = _load(run_dir)
-    agents = [a for a, v in summary["agents"].items() if v["n"]]
+    agents = _order([a for a, v in summary["agents"].items() if v["n"]])
     if not agents:
         raise SystemExit("no scored trials in run dir")
     fig, ax = plt.subplots(figsize=(8.4, 4.8), facecolor=SURFACE)
@@ -95,7 +105,7 @@ def draw(run_dir: str | Path, out: str | None = None) -> str:
 def failure_map(run_dir: str | Path, out: str | None = None) -> str:
     run_dir = Path(run_dir)
     summary, rows = _load(run_dir)
-    agents = [a for a, v in summary["agents"].items() if v["n"]]
+    agents = _order([a for a, v in summary["agents"].items() if v["n"]])
     scenarios = sorted({r["scenario"] for r in rows}, key=lambda x: int(x[1:]))
     fig, ax = plt.subplots(figsize=(11, 0.7 * len(agents) + 2.3), facecolor=SURFACE)
     seen = set()

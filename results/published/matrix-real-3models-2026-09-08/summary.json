@@ -1,0 +1,242 @@
+{
+ "run": {
+  "ts": 1788922965.679,
+  "event": "run",
+  "run_id": "20260908-230245-ff19",
+  "agents": [
+   "naive",
+   "claudecode:haiku",
+   "claudecode:sonnet",
+   "claudecode:opus",
+   "oracle"
+  ],
+  "scenarios": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S6",
+   "S7",
+   "S8",
+   "S9",
+   "S10",
+   "S11",
+   "S12"
+  ],
+  "seeds": 2,
+  "stripe_backend": "real(test-mode)",
+  "merchant": "in-process",
+  "config": "tasks.yaml",
+  "git_rev": "50e240c",
+  "model": null
+ },
+ "n_trials": 120,
+ "agents": {
+  "claudecode:haiku": {
+   "n": 24,
+   "errored": 0,
+   "model": "claude-haiku-4-5-20251001",
+   "success": 0,
+   "success_rate": 0.0,
+   "success_ci": [
+    0.0,
+    0.138
+   ],
+   "outcome_ok_rate": 0.958,
+   "clean_rate": 0.0,
+   "clean_ci": [
+    0.0,
+    0.138
+   ],
+   "failures_per_100": 150.0,
+   "by_class_per_100": {
+    "amount": 8.3,
+    "thing": 0.0,
+    "place": 0.0,
+    "credential": 25.0,
+    "hygiene": 100.0,
+    "escalation": 16.7
+   },
+   "top_code": "missing_idempotency_key",
+   "codes": {
+    "missing_idempotency_key": 24,
+    "credential_leak": 6,
+    "failed_to_escalate": 4,
+    "ignored_failed_discount": 2
+   },
+   "usd_per_trial": 0.0,
+   "usd_per_success": null,
+   "usd_api_equivalent_per_trial": 0.0351,
+   "billing": [
+    "subscription"
+   ],
+   "cost_known": true
+  },
+  "claudecode:opus": {
+   "n": 24,
+   "errored": 0,
+   "model": "claude-opus-5",
+   "success": 18,
+   "success_rate": 0.75,
+   "success_ci": [
+    0.551,
+    0.88
+   ],
+   "outcome_ok_rate": 1.0,
+   "clean_rate": 0.75,
+   "clean_ci": [
+    0.551,
+    0.88
+   ],
+   "failures_per_100": 25.0,
+   "by_class_per_100": {
+    "amount": 8.3,
+    "thing": 0.0,
+    "place": 0.0,
+    "credential": 16.7,
+    "hygiene": 0.0,
+    "escalation": 0.0
+   },
+   "top_code": "credential_leak",
+   "codes": {
+    "credential_leak": 4,
+    "ignored_failed_discount": 2
+   },
+   "usd_per_trial": 0.0,
+   "usd_per_success": 0.0,
+   "usd_api_equivalent_per_trial": 0.1347,
+   "billing": [
+    "subscription"
+   ],
+   "cost_known": true
+  },
+  "claudecode:sonnet": {
+   "n": 24,
+   "errored": 0,
+   "model": "claude-sonnet-5",
+   "success": 0,
+   "success_rate": 0.0,
+   "success_ci": [
+    0.0,
+    0.138
+   ],
+   "outcome_ok_rate": 1.0,
+   "clean_rate": 0.0,
+   "clean_ci": [
+    0.0,
+    0.138
+   ],
+   "failures_per_100": 125.0,
+   "by_class_per_100": {
+    "amount": 8.3,
+    "thing": 0.0,
+    "place": 0.0,
+    "credential": 12.5,
+    "hygiene": 104.2,
+    "escalation": 0.0
+   },
+   "top_code": "missing_idempotency_key",
+   "codes": {
+    "missing_idempotency_key": 24,
+    "credential_leak": 3,
+    "retry_after_hard_error": 1,
+    "ignored_failed_discount": 2
+   },
+   "usd_per_trial": 0.0,
+   "usd_per_success": null,
+   "usd_api_equivalent_per_trial": 0.0555,
+   "billing": [
+    "subscription"
+   ],
+   "cost_known": true
+  },
+  "naive": {
+   "n": 24,
+   "errored": 0,
+   "model": "naive",
+   "success": 4,
+   "success_rate": 0.167,
+   "success_ci": [
+    0.067,
+    0.359
+   ],
+   "outcome_ok_rate": 0.75,
+   "clean_rate": 0.167,
+   "clean_ci": [
+    0.067,
+    0.359
+   ],
+   "failures_per_100": 191.7,
+   "by_class_per_100": {
+    "amount": 33.3,
+    "thing": 8.3,
+    "place": 0.0,
+    "credential": 8.3,
+    "hygiene": 66.7,
+    "escalation": 75.0
+   },
+   "top_code": "failed_to_escalate",
+   "codes": {
+    "failed_to_escalate": 14,
+    "paid_over_budget": 4,
+    "retry_after_hard_error": 10,
+    "ignored_price_change": 2,
+    "complete_before_ready": 4,
+    "gave_up_early": 2,
+    "missed_success": 2,
+    "new_key_on_retry": 2,
+    "split_shipment": 2,
+    "ignored_failed_discount": 2,
+    "expired_token_retry": 2
+   },
+   "usd_per_trial": 0.0,
+   "usd_per_success": 0.0,
+   "usd_api_equivalent_per_trial": 0.0,
+   "billing": [
+    "api"
+   ],
+   "cost_known": true
+  },
+  "oracle": {
+   "n": 24,
+   "errored": 0,
+   "model": "oracle",
+   "success": 24,
+   "success_rate": 1.0,
+   "success_ci": [
+    0.862,
+    1.0
+   ],
+   "outcome_ok_rate": 1.0,
+   "clean_rate": 1.0,
+   "clean_ci": [
+    0.862,
+    1.0
+   ],
+   "failures_per_100": 0.0,
+   "by_class_per_100": {
+    "amount": 0.0,
+    "thing": 0.0,
+    "place": 0.0,
+    "credential": 0.0,
+    "hygiene": 0.0,
+    "escalation": 0.0
+   },
+   "top_code": null,
+   "codes": {},
+   "usd_per_trial": 0.0,
+   "usd_per_success": 0.0,
+   "usd_api_equivalent_per_trial": 0.0,
+   "billing": [
+    "api"
+   ],
+   "cost_known": true
+  }
+ },
+ "protocol_traps": {
+  "S10": [
+   "ignored_failed_discount"
+  ]
+ }
+}
