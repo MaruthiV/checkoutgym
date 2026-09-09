@@ -12,7 +12,8 @@ CARD_3DS = "pm_card_threeDSecure2Required"
 
 @dataclass
 class FakeStripe:
-    single_use: bool = False
+    # probed 2026-09-08: real spts are consumed after one successful charge
+    single_use: bool = True
     auto_mint: bool = False
     clock_offset: float = 0.0
     tokens: dict = field(default_factory=dict)
@@ -146,11 +147,16 @@ class RealStripe:
         self.intents.append(rec)
         if r.status_code >= 400:
             err = body.get("error", {})
-            return {"ok": False, "code": err.get("decline_code") or err.get("code", "unknown"), "message": err.get("message", ""), "raw": body}
+            code = err.get("decline_code") or err.get("code") or err.get("type") or "unknown"
+            msg = err.get("message", "")
+            if "deactivated" in msg:
+                reason = self.get_token(token_id).get("deactivated_reason") or "deactivated"
+                code, msg = f"shared_payment_token_{reason}", f"Shared payment token is deactivated ({reason})"
+            return {"ok": False, "code": code, "message": msg, "raw": body}
         if body.get("status") == "requires_action":
             return {"ok": False, "code": "requires_action", "message": "3D Secure authentication required", "id": body["id"]}
         if body.get("status") != "succeeded":
-            return {"ok": False, "code": body.get("status", "unknown"), "message": "PaymentIntent not succeeded", "id": body.get("id")}
+            return {"ok": False, "code": body.get("status", "unknown"), "message": f"PaymentIntent status {body.get('status')}", "id": body.get("id")}
         return {"ok": True, "id": body["id"], "amount": amount}
 
     def intents_for(self, token_id: str) -> list[dict]:
@@ -160,8 +166,8 @@ class RealStripe:
 def make_backend(kind: str) -> FakeStripe | RealStripe:
     if kind == "fake":
         return FakeStripe()
-    if kind == "fake-single-use":
-        return FakeStripe(single_use=True)
+    if kind == "fake-cumulative":
+        return FakeStripe(single_use=False)
     if kind == "real":
         return RealStripe()
     raise ValueError(f"unknown stripe backend {kind}")

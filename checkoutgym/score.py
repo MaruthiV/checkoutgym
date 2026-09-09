@@ -28,7 +28,7 @@ def load_events(run_dir: Path) -> tuple[dict, dict[str, dict]]:
             header = e
         elif e["event"] == "ground_truth":
             trials[e["trial"]]["gt"] = e
-        else:
+        elif e["event"] == "tool":
             trials[e["trial"]]["tools"].append(e)
     return header, dict(trials)
 
@@ -166,11 +166,15 @@ def score_trial(tools: list[dict], gt: dict) -> dict:
 
     price = PRICES.get(gt.get("model"))
     usd = round((gt["tokens_in"] * price[0] + gt["tokens_out"] * price[1]) / 1e6, 4) if price else 0.0
+    subscription = gt.get("billing") == "subscription"
+    if subscription:
+        usd = 0.0
     return {"trial": gt["trial"], "agent": gt["agent"], "model": gt.get("model"), "scenario": gt["scenario"], "seed": gt["seed"],
             "success": bool(ok), "outcome_ok": outcome_ok, "codes": sorted(codes), "classes": sorted({CLASSES[c] for c in codes}, key=CLASS_ORDER.index),
             "errored": bool(gt["error"]), "error": gt["error"], "orders": gt["orders"], "amount_charged": gt["amount_charged_merchant"],
             "api_calls": gt["api_calls"], "tokens_in": gt["tokens_in"], "tokens_out": gt["tokens_out"], "usd_cost": usd,
-            "cost_known": price is not None or gt["agent"] in ("naive", "oracle"), "wall_ms": gt["wall_ms"], "stripe_backend": gt["stripe_backend"]}
+            "cost_known": price is not None or subscription or gt["agent"] in ("naive", "oracle"), "billing": gt.get("billing", "api"),
+            "usd_api_equivalent": gt.get("usd_api_equivalent"), "wall_ms": gt["wall_ms"], "stripe_backend": gt["stripe_backend"]}
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -203,6 +207,8 @@ def aggregate(rows: list[dict]) -> dict:
                       "by_class_per_100": {k: round(100 * classes.get(k, 0) / n, 1) if n else None for k in CLASS_ORDER},
                       "top_code": codes.most_common(1)[0][0] if codes else None, "codes": dict(codes),
                       "usd_per_trial": round(usd / n, 4) if n else None, "usd_per_success": round(usd / succ, 4) if succ else None,
+                      "usd_api_equivalent_per_trial": round(sum(r["usd_api_equivalent"] or 0 for r in live) / n, 4) if n else None,
+                      "billing": sorted({r["billing"] for r in live}),
                       "cost_known": all(r["cost_known"] for r in live)}
     # protocol traps = codes that fire for every agent on a scenario
     fired = defaultdict(lambda: defaultdict(set))
@@ -234,3 +240,29 @@ def table(summary: dict) -> str:
         usd = f"${a['usd_per_trial']:.3f}" if a["usd_per_trial"] is not None and a["cost_known"] else "n/a"
         lines.append(f"| {agent} | {a['n']} | {sr} | {cr} | {a['failures_per_100']} | {a['top_code'] or '-'} | {usd} |")
     return "\n".join(lines)
+
+
+def print_trace(run_dir: str | Path, trial: str) -> None:
+    for line in open(Path(run_dir) / "events.jsonl"):
+        e = json.loads(line)
+        if e.get("trial") != trial:
+            continue
+        if e["event"] == "tool":
+            r = e.get("resp") or {}
+            msgs = " ".join(f"{c}/{res or '-'}" for c, res in r.get("message_codes", []))
+            extra = r.get("error_code") or r.get("order_id") or ""
+            args = {k: v for k, v in (e.get("args") or {}).items() if k not in ("idempotency_key",)}
+            print(f"{e['step']:>2} {e['tool']:<26} key={'y' if e.get('idem_key') else 'n'} http={e.get('http') or '-':<4} "
+                  f"{e.get('status_before') or '-':>22} -> {r.get('status') or '-':<22} total={r.get('total') if r.get('total') is not None else e.get('total')} "
+                  f"{msgs} {extra} {json.dumps(args)[:110]}{' LEAK' if e.get('leak') else ''}")
+            if e["tool"] == "ask_user":
+                print(f"   -> user: {e.get('reply')}")
+        elif e["event"] == "note":
+            print(f"   note {e.get('kind')}: model={e.get('model')} turns={e.get('turns')} subtype={e.get('subtype')} "
+                  f"api_equiv=${e.get('usd_api_equivalent') or 0:.3f} tokens={e.get('tokens_in')}/{e.get('tokens_out')} killed={e.get('killed')}")
+            if e.get("final_text"):
+                print(f"   final: {str(e['final_text'])[:300]!r}")
+        elif e["event"] == "ground_truth":
+            print(f"GT orders={e['orders']} charged={e['amount_charged_merchant']} stripe_captured={e['amount_captured_stripe']} token={e['token_deactivated_reason']} "
+                  f"status={e['final_status']} claimed={e['claimed_order_id']} finished={e['finished']} calls={e['api_calls']} err={e['error']}")
+            print(f"   charges={[(c['ok'], c['code']) for c in e['charges']]} items={e['final_line_items']} selected={e['selected_options']}")

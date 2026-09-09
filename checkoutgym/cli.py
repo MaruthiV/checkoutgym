@@ -13,7 +13,7 @@ def main(argv=None) -> int:
     r.add_argument("--agents", default="naive,oracle")
     r.add_argument("--scenarios", default="all")
     r.add_argument("--seeds", type=int, default=2)
-    r.add_argument("--stripe", default="fake", choices=["fake", "fake-single-use", "real"])
+    r.add_argument("--stripe", default="fake", choices=["fake", "fake-cumulative", "real"])
     r.add_argument("--merchant-url", default=None, help="use a running merchant instead of in-process (real stripe only)")
     r.add_argument("--model", default=None)
     r.add_argument("--out", default=None)
@@ -26,10 +26,13 @@ def main(argv=None) -> int:
     c.add_argument("--out", default=None)
     v = sub.add_parser("serve", help="run the mock merchant on a port")
     v.add_argument("--scenario", default="S1")
-    v.add_argument("--stripe", default="fake", choices=["fake", "fake-single-use", "real"])
+    v.add_argument("--stripe", default="fake", choices=["fake", "fake-cumulative", "real"])
     v.add_argument("--port", type=int, default=8787)
     v.add_argument("--auto-mint", action="store_true", help="fake stripe accepts any spt_ token (for the acp-test validator)")
     sub.add_parser("probe", help="20 minute spt truth test against real stripe test mode")
+    t = sub.add_parser("trace", help="print one trial's log lines")
+    t.add_argument("run_dir")
+    t.add_argument("trial")
     a = p.parse_args(argv)
 
     if a.cmd == "run":
@@ -61,6 +64,10 @@ def main(argv=None) -> int:
         app.state.store.reset(a.scenario, "serve")
         print(f"merchant on http://127.0.0.1:{a.port} scenario={a.scenario} stripe={a.stripe}")
         uvicorn.run(app, host="127.0.0.1", port=a.port, log_level="info")
+        return 0
+    if a.cmd == "trace":
+        from .score import print_trace
+        print_trace(a.run_dir, a.trial)
         return 0
     if a.cmd == "probe":
         from scripts.spt_probe import probe

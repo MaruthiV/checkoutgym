@@ -1,0 +1,107 @@
+{
+ "run": {
+  "ts": 1788920723.518,
+  "event": "run",
+  "run_id": "20260908-222523-b776",
+  "agents": [
+   "naive",
+   "oracle"
+  ],
+  "scenarios": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S6",
+   "S7",
+   "S8",
+   "S9",
+   "S10",
+   "S11",
+   "S12"
+  ],
+  "seeds": 2,
+  "stripe_backend": "real(test-mode)",
+  "merchant": "in-process",
+  "config": "tasks.yaml",
+  "git_rev": "0f01d84",
+  "model": null
+ },
+ "n_trials": 48,
+ "agents": {
+  "naive": {
+   "n": 24,
+   "errored": 0,
+   "success": 4,
+   "success_rate": 0.167,
+   "success_ci": [
+    0.067,
+    0.359
+   ],
+   "outcome_ok_rate": 0.75,
+   "clean_rate": 0.167,
+   "clean_ci": [
+    0.067,
+    0.359
+   ],
+   "failures_per_100": 191.7,
+   "by_class_per_100": {
+    "amount": 33.3,
+    "thing": 8.3,
+    "place": 0.0,
+    "credential": 8.3,
+    "hygiene": 66.7,
+    "escalation": 75.0
+   },
+   "top_code": "failed_to_escalate",
+   "codes": {
+    "failed_to_escalate": 14,
+    "paid_over_budget": 4,
+    "retry_after_hard_error": 10,
+    "ignored_price_change": 2,
+    "complete_before_ready": 4,
+    "gave_up_early": 2,
+    "missed_success": 2,
+    "new_key_on_retry": 2,
+    "split_shipment": 2,
+    "ignored_failed_discount": 2,
+    "expired_token_retry": 2
+   },
+   "usd_per_trial": 0.0,
+   "usd_per_success": 0.0,
+   "cost_known": true
+  },
+  "oracle": {
+   "n": 24,
+   "errored": 0,
+   "success": 24,
+   "success_rate": 1.0,
+   "success_ci": [
+    0.862,
+    1.0
+   ],
+   "outcome_ok_rate": 1.0,
+   "clean_rate": 1.0,
+   "clean_ci": [
+    0.862,
+    1.0
+   ],
+   "failures_per_100": 0.0,
+   "by_class_per_100": {
+    "amount": 0.0,
+    "thing": 0.0,
+    "place": 0.0,
+    "credential": 0.0,
+    "hygiene": 0.0,
+    "escalation": 0.0
+   },
+   "top_code": null,
+   "codes": {},
+   "usd_per_trial": 0.0,
+   "usd_per_success": 0.0,
+   "cost_known": true
+  }
+ },
+ "protocol_traps": {}
+}

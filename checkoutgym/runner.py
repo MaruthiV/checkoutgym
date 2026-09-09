@@ -13,7 +13,7 @@ from .agents.base import StepLimit, ToolRunner
 from .stripe_leg import make_backend
 
 AGENT_MODULES = {"naive": "checkoutgym.agents.naive", "oracle": "checkoutgym.agents.oracle",
-                 "claude": "checkoutgym.agents.claude", "gpt": "checkoutgym.agents.gpt"}
+                 "claude": "checkoutgym.agents.claude", "gpt": "checkoutgym.agents.gpt", "claudecode": "checkoutgym.agents.claudecode"}
 ALL_SCENARIOS = [f"S{i}" for i in range(1, 13)]
 
 
@@ -93,7 +93,7 @@ def run_trial(agent_name: str, scenario: str, seed: int, cfg: dict, stripe, clie
           "sessions": len(state["sessions"]), "orders": len(state["orders"]), "order_ids": [o["id"] for o in state["orders"]],
           "amount_charged_merchant": sum(c["amount"] for c in state["charges"] if c["ok"]),
           "amount_captured_stripe": captured, "token_deactivated_reason": tok_state.get("deactivated_reason"),
-          "charges": [{"ok": c["ok"], "code": c["code"], "amount": c["amount"]} for c in state["charges"]],
+          "charges": [{"ok": c["ok"], "code": c["code"], "amount": c["amount"], "message": c.get("message")} for c in state["charges"]],
           "final_status": final_status, "session_status_field": sess["status"] if sess else None,
           "final_line_items": [[li["item"]["id"], li["quantity"]] for li in sess["line_items"]] if sess else [],
           "selected_options": [s["option_id"] for s in sess["selected_fulfillment_options"]] if sess else [],
@@ -101,7 +101,11 @@ def run_trial(agent_name: str, scenario: str, seed: int, cfg: dict, stripe, clie
           "merchant_calls": [{"path": c["path"], "method": c["method"], "api_version": c["api_version"], "has_key": bool(c["idempotency_key"])} for c in state["calls"]],
           "agent_claimed_order": bool(tools.claim and tools.claim.get("order_id")), "claimed_order_id": (tools.claim or {}).get("order_id"),
           "finished": tools.claim is not None, "api_calls": tools.step, "asked": tools.asked, "leaks": tools.leaks,
-          "tokens_in": tools.tokens_in, "tokens_out": tools.tokens_out, "wall_ms": wall_ms, "error": error}
+          "tokens_in": tools.tokens_in, "tokens_out": tools.tokens_out, "wall_ms": wall_ms, "error": error,
+          "billing": getattr(tools, "billing", "api"), "usd_api_equivalent": getattr(tools, "usd_api_equivalent", None),
+          "model_used": getattr(tools, "model_used", None)}
+    if gt["model_used"]:
+        gt["model"] = gt["model_used"]
     log(gt)
     return gt
 

@@ -350,7 +350,7 @@ async def complete_session(sid: str, request: Request):
         store.charges.append({"token": token, "amount": total, "ok": False, "code": "deferred_fraud_review", "pi": None})
         return idem_finish(store, key, path, JSONResponse(public(sess), status_code=200))
     res = store.stripe.charge(token, total, sess["currency"])
-    store.charges.append({"token": token, "amount": total, "ok": res.get("ok", False), "code": res.get("code"), "pi": res.get("id")})
+    store.charges.append({"token": token, "amount": total, "ok": res.get("ok", False), "code": res.get("code"), "pi": res.get("id"), "message": res.get("message")})
     if not res.get("ok"):
         if res.get("code") == "requires_action":
             return idem_finish(store, key, path, err(400, ERR_REQUIRES_3DS))

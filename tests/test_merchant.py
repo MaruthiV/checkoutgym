@@ -62,11 +62,13 @@ def test_s6_lost_response_recovery(merchant):
     assert r.status_code == 200 and r.json()["status"] == "completed" and len(store.orders) == 1
     r = complete(c, s["id"], tok, "k2")
     assert r.status_code == 200 and r.json()["messages"][-1]["code"] == "payment_declined" and len(store.orders) == 1
-    assert store.charges[-1]["code"] == "amount_exceeds_limit"
+    assert store.charges[-1]["code"] == "shared_payment_token_deactivated"
 
 
 def test_s6_double_charge_when_cap_allows(merchant):
-    c, store = merchant("S6")
+    # counterfactual: a reusable token with headroom lets the #402 double charge through
+    from checkoutgym.stripe_leg import FakeStripe
+    c, store = merchant("S6", stripe=FakeStripe(single_use=False))
     s = create(c, T2).json()
     tok = store.stripe.mint(20000)["id"]
     complete(c, s["id"], tok, "k")
