@@ -34,6 +34,7 @@
   "claudecode": {
    "n": 24,
    "errored": 0,
+   "model": "claude-sonnet-5",
    "success": 0,
    "success_rate": 0.0,
    "success_ci": [
@@ -72,6 +73,7 @@
   "naive": {
    "n": 24,
    "errored": 0,
+   "model": "naive",
    "success": 4,
    "success_rate": 0.167,
    "success_ci": [
@@ -118,6 +120,7 @@
   "oracle": {
    "n": 24,
    "errored": 0,
+   "model": "oracle",
    "success": 24,
    "success_rate": 1.0,
    "success_ci": [

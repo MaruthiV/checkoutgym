@@ -51,8 +51,9 @@ def main(argv=None) -> int:
             print("\nprotocol traps (fired for every agent):", json.dumps(summary["protocol_traps"]))
         return 0
     if a.cmd == "chart":
-        from .chart import draw
+        from .chart import draw, heatmap
         print(draw(a.run_dir, a.out))
+        print(heatmap(a.run_dir))
         return 0
     if a.cmd == "serve":
         import uvicorn

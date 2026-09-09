@@ -85,3 +85,49 @@ def draw(run_dir: str | Path, out: str | None = None) -> str:
     fig.savefig(path, facecolor=SURFACE)
     plt.close(fig)
     return str(path)
+
+
+# sequential blue ramp from the reference palette, light to dark
+RAMP = ["#ffffff", "#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
+SHORT = {"paid_over_budget": "over budget", "ignored_price_change": "price change", "ignored_failed_discount": "bad coupon",
+         "wrong_sku": "wrong sku", "wrong_qty": "wrong qty", "silent_substitution": "silent swap", "split_shipment": "split ship",
+         "bad_api_version": "api version", "token_reuse": "token reuse", "expired_token_retry": "expired retry", "credential_leak": "cred leak",
+         "missing_idempotency_key": "missing key", "new_key_on_retry": "new key retry", "complete_before_ready": "not ready",
+         "retry_after_hard_error": "blind retry", "failed_to_escalate": "no escalate", "over_escalated": "over escalate",
+         "hallucinated_success": "fake success", "missed_success": "missed success", "gave_up_early": "gave up"}
+
+
+def heatmap(run_dir: str | Path, out: str | None = None) -> str:
+    from matplotlib.colors import ListedColormap
+
+    run_dir = Path(run_dir)
+    rows = [json.loads(line) for line in open(run_dir / "results.jsonl")]
+    summary = json.load(open(run_dir / "summary.json"))
+    agents = [a for a in summary["agents"] if summary["agents"][a]["n"]]
+    scenarios = sorted({r["scenario"] for r in rows}, key=lambda x: int(x[1:]))
+    grid = [[sum(len(r["codes"]) for r in rows if r["agent"] == a and r["scenario"] == sc) for sc in scenarios] for a in agents]
+    top = [[max((r["codes"] for r in rows if r["agent"] == a and r["scenario"] == sc), key=len, default=[]) for sc in scenarios] for a in agents]
+    vmax = max(1, max(v for row in grid for v in row))
+    fig, ax = plt.subplots(figsize=(10.5, 0.62 * len(agents) + 1.9), dpi=200, facecolor=SURFACE)
+    cmap = ListedColormap(RAMP[: min(len(RAMP), vmax + 1)])
+    ax.imshow(grid, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
+    for i, a in enumerate(agents):
+        for j, _ in enumerate(scenarios):
+            v = grid[i][j]
+            txt = f"{v}" + (f"\n{SHORT.get(top[i][j][0], top[i][j][0])}" if v and top[i][j] else "")
+            ax.text(j, i, txt, ha="center", va="center", fontsize=7, color="#ffffff" if v > vmax * 0.55 else INK)
+    ax.set_xticks(range(len(scenarios)), scenarios, fontsize=8, color=INK2)
+    ax.set_yticks(range(len(agents)), [summary["agents"][a].get("model") if a.startswith("claudecode") and summary["agents"][a].get("model") else a for a in agents], fontsize=8, color=INK2)
+    ax.tick_params(length=0)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    ax.set_xticks([x - 0.5 for x in range(1, len(scenarios))], minor=True)
+    ax.set_yticks([y - 0.5 for y in range(1, len(agents))], minor=True)
+    ax.grid(which="minor", color=SURFACE, linewidth=2)
+    fig.text(0.02, 0.97, "where each agent breaks", fontsize=12, fontweight="semibold", color=INK, va="top")
+    fig.text(0.02, 0.905, "failure codes fired per scenario across both seeds, and the most common one", fontsize=8, color=MUTED, va="top")
+    fig.subplots_adjust(top=0.78, bottom=0.12, left=0.2, right=0.98)
+    path = Path(out) if out else run_dir / "heatmap.png"
+    fig.savefig(path, facecolor=SURFACE)
+    plt.close(fig)
+    return str(path)
