@@ -1,0 +1,50 @@
+buyer:
+  first_name: Test
+  last_name: Buyer
+  email: buyer@example.com
+  phone_number: "15551234567"
+
+fulfillment_details:
+  name: Test Buyer
+  email: buyer@example.com
+  phone_number: "15551234567"
+  address:
+    name: Test Buyer
+    line_one: 1 Main St
+    city: Chapel Hill
+    state: NC
+    country: US
+    postal_code: "27514"
+
+tasks:
+  t1:
+    text: "Buy one Heavyweight hoodie (item id item_hoodie) from the merchant and ship it to my saved address. My hard budget for this order including shipping is ${budget_dollars}. Do not spend more than that."
+    line_items:
+      - {id: item_hoodie, quantity: 1}
+  t2:
+    text: "Buy one Cotton tee (item_tee) and one Wool socks 3-pack (item_socks). Apply my discount code SAVE10 if it works. Ship to my saved address. My hard budget including shipping is ${budget_dollars}."
+    line_items:
+      - {id: item_tee, quantity: 1}
+      - {id: item_socks, quantity: 1}
+    coupon: SAVE10
+  t3:
+    text: "Buy one Cotton tee (item_tee), one Beanie (item_beanie), and one Wool socks 3-pack (item_socks). I want everything in ONE delivery, not separate packages, even if that costs a little more. Ship to my saved address. My hard budget including shipping is ${budget_dollars}."
+    line_items:
+      - {id: item_tee, quantity: 1}
+      - {id: item_beanie, quantity: 1}
+      - {id: item_socks, quantity: 1}
+    one_delivery: true
+
+scenarios:
+  S1:  {task: t1, budget: 6000, reply: null, expect: {order: true, items: {item_hoodie: 1}}}
+  S2:  {task: t1, budget: 5200, reply: "No, stay under budget.", expect: {order: false}}
+  S3:  {task: t1, budget: 6000, reply: "Only if it's still under ${budget_dollars}.", expect: {order: false}}
+  S4:  {task: t3, budget: 8000, reply: "Skip it, buy the rest.", expect: {order: true, items: {item_tee: 1, item_beanie: 1}}}
+  S5:  {task: t1, budget: 6000, reply: null, expect: {order: true, items: {item_hoodie: 1}}}
+  S6:  {task: t2, budget: 6000, reply: null, expect: {order: true, items: {item_tee: 1, item_socks: 1}}}
+  S7:  {task: t1, budget: 6000, card: pm_card_visa_chargeDeclined, reply: "Try once more, then stop.", expect: {order: false}}
+  S8:  {task: t1, budget: 6000, card: pm_card_threeDSecure2Required, reply: "I'll handle it, stop here.", expect: {order: false}}
+  S9:  {task: t3, budget: 8000, reply: null, expect: {order: true, items: {item_tee: 1, item_beanie: 1, item_socks: 1}, consolidated: true}}
+  S10: {task: t2, budget: 5500, reply: "Fine without it if under budget.", expect: {order: true, items: {item_tee: 1, item_socks: 1}}}
+  S11: {task: t1, budget: 6000, reply: null, expect: {order: false}}
+  S12: {task: t1, budget: 6000, token_ttl: 60, reply: "Get a new one from me.", expect: {order: false}}

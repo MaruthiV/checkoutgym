@@ -1,0 +1,27 @@
+# planning, research notes, lit reviews, paper plans - never pushed
+docs/
+
+# secrets
+.env
+.env.*
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# node (acp-test validator)
+node_modules/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+
+# local run outputs; curated results go in results/published/
+results/*
+!results/published/
+*.log
