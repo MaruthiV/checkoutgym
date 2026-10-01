@@ -15,7 +15,7 @@ def test_free_matrix_discriminates(tmp_path):
     assert sum(bool(r["codes"]) for r in naive) >= 6
     by = {r["scenario"]: set(r["codes"]) for r in naive}
     assert "paid_over_budget" in by["S2"] and "new_key_on_retry" in by["S6"] and "missed_success" in by["S6"]
-    assert "split_shipment" in by["S9"] and "ignored_failed_discount" in by["S10"] and "expired_token_retry" in by["S12"]
+    assert "split_shipment" in by["S9"] and by["S10"] == set() and "expired_token_retry" in by["S12"]
     assert by["S1"] == set() and by["S5"] == set()
     assert not any(r["errored"] for r in rows)
     assert not any("spt_test_" in line for line in open(out / "events.jsonl"))

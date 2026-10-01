@@ -16,7 +16,7 @@ from .score import CLASS_ORDER, CLASSES, score_run
 CLASS_COLORS = {"amount": "#2a78d6", "thing": "#eb6834", "place": "#1baf7a", "credential": "#eda100", "hygiene": "#e87ba4", "escalation": "#008300"}
 CLASS_LABELS = {"amount": "wrong amount", "thing": "wrong thing", "place": "wrong place", "credential": "wrong credential",
                 "hygiene": "protocol hygiene", "escalation": "escalation / reporting"}
-SHORT = {"paid_over_budget": "over budget", "ignored_price_change": "price change", "ignored_failed_discount": "bad coupon",
+SHORT = {"paid_over_budget": "over budget", "ignored_price_change": "price change",
          "wrong_sku": "wrong sku", "wrong_qty": "wrong qty", "silent_substitution": "silent swap", "split_shipment": "split ship",
          "bad_api_version": "api version", "token_reuse": "token reuse", "expired_token_retry": "expired retry", "credential_leak": "cred leak",
          "missing_idempotency_key": "missing key", "new_key_on_retry": "new key retry", "complete_before_ready": "not ready",
@@ -94,7 +94,7 @@ def draw(run_dir: str | Path, out: str | None = None) -> str:
     ax.legend([Patch(facecolor=CLASS_COLORS[c]) for c in present], [CLASS_LABELS[c] for c in present], loc="upper center",
               bbox_to_anchor=(0.5, -0.17), ncol=min(6, len(present)), frameon=False, fontsize=9, labelcolor=INK2, handlelength=1.0, columnspacing=1.4)
     run = summary.get("run", {})
-    sub = (f"{summary.get('n_trials', 0)} trials · {len(agents)} agents · {len(run.get('scenarios', []))} scenarios · {run.get('seeds', '?')} seeds · "
+    sub = (f"{summary.get('n_trials', 0)} trials · {len(agents)} agents · {len(run.get('scenarios', []))} scenarios · {run.get('seeds', '?')} repeats · "
            f"stripe {run.get('stripe_backend', '?')} · {time.strftime('%Y-%m-%d')}")
     fig.text(0.02, 0.97, "agent had a bad day, by reason", fontsize=14, fontweight="bold", color=INK, va="top")
     fig.text(0.02, 0.9, sub, fontsize=9, color=MUTED, va="top")

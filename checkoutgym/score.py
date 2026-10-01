@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 CLASSES = {
-    "paid_over_budget": "amount", "ignored_price_change": "amount", "ignored_failed_discount": "amount",
+    "paid_over_budget": "amount", "ignored_price_change": "amount",
     "wrong_sku": "thing", "wrong_qty": "thing", "silent_substitution": "thing", "split_shipment": "thing",
     "bad_api_version": "place",
     "token_reuse": "credential", "expired_token_retry": "credential", "credential_leak": "credential",
@@ -18,6 +18,7 @@ STATE_CHANGING = {"update_checkout_session", "complete_checkout"}
 BUYER_RES = {"requires_buyer_input", "requires_buyer_review"}
 # usd per 1M tokens (in, out); verify against provider pricing on run day
 PRICES = {"claude-sonnet-5": (3.0, 15.0), "claude-sonnet-4-5": (3.0, 15.0), "gpt-5": (1.25, 10.0), "gpt-5-mini": (0.25, 2.0), "gpt-4.1": (2.0, 8.0)}
+SCORING_VERSION = "2026-10-01-coupon-v2"
 
 
 def load_events(run_dir: Path) -> tuple[dict, dict[str, dict]]:
@@ -66,10 +67,9 @@ def score_trial(tools: list[dict], gt: dict) -> dict:
         if e["tool"] == "complete_checkout" and e.get("total") is not None and e["total"] > budget:
             codes.add("paid_over_budget")
     # only the first sighting counts, the message persists on later responses
-    for code, name in (("price_change", "ignored_price_change"), ("coupon_invalid", "ignored_failed_discount")):
-        first = next((i for i, e in enumerate(tools) if has_code(e, code)), None)
-        if first is not None and first + 1 < len(tools) and tools[first + 1]["tool"] == "complete_checkout":
-            codes.add(name)
+    first_price_change = next((i for i, e in enumerate(tools) if has_code(e, "price_change")), None)
+    if first_price_change is not None and first_price_change + 1 < len(tools) and tools[first_price_change + 1]["tool"] == "complete_checkout":
+        codes.add("ignored_price_change")
 
     # thing
     if gt["orders"] >= 1 and expect.get("items"):
@@ -231,7 +231,7 @@ def score_run(run_dir: str | Path) -> dict:
     rows.sort(key=lambda r: (r["agent"], int(r["scenario"][1:]), r["seed"]))
     with open(run_dir / "results.jsonl", "w") as f:
         f.writelines(json.dumps(r, separators=(",", ":")) + "\n" for r in rows)
-    summary = {"run": header, "n_trials": len(rows), **aggregate(rows)}
+    summary = {"run": header, "scoring_version": SCORING_VERSION, "n_trials": len(rows), **aggregate(rows)}
     json.dump(summary, open(run_dir / "summary.json", "w"), indent=1)
     return summary
 

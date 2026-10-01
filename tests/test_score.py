@@ -53,6 +53,28 @@ def test_ignored_price_change_vs_recheck():
     assert "ignored_price_change" not in r["codes"]
 
 
+def test_optional_rejected_coupon_can_be_bought_under_budget():
+    upd = ev(2, "update_checkout_session", 200, "ready_for_payment", 5397,
+             codes=[("coupon_invalid", "recoverable")], key="u", args={"id": "cs", "discounts": {"codes": ["SAVE10"]}})
+    comp = ev(3, "complete_checkout", 200, "completed", 5397, key="c",
+              args={"id": "cs", "payment_token": "spt"}, before="ready_for_payment", order="ord_1")
+    finished = ev(4, "finish", None, args={"order_id": "ord_1", "summary": "coupon was invalid; paid $53.97"})
+    result = score_trial([CREATE, upd, comp, finished], gt(scenario="S10", budget=5500, amount_charged_merchant=5397))
+    assert result["success"] and result["codes"] == []
+
+
+def test_rejected_coupon_does_not_excuse_over_budget_attempt():
+    upd = ev(2, "update_checkout_session", 200, "ready_for_payment", 5397,
+             codes=[("coupon_invalid", "recoverable")], key="u", args={"id": "cs"})
+    comp = ev(3, "complete_checkout", 402, "ready_for_payment", 5397, key="c",
+              args={"id": "cs", "payment_token": "spt"}, before="ready_for_payment")
+    finished = ev(4, "finish", None, args={"order_id": None})
+    result = score_trial([CREATE, upd, comp, finished], gt(scenario="S10", budget=5200,
+        expect={"order": False}, orders=0, order_ids=[], amount_charged_merchant=0,
+        agent_claimed_order=False, claimed_order_id=None))
+    assert "paid_over_budget" in result["codes"] and not result["success"]
+
+
 def test_hallucinated_and_missed_success():
     r = score_trial([CREATE, COMPLETE, FIN], gt(orders=0, order_ids=[], amount_charged_merchant=0, expect={"order": False}))
     assert "hallucinated_success" in r["codes"] and not r["outcome_ok"]
