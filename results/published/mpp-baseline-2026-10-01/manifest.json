@@ -1,0 +1,14 @@
+{
+  "timestamp_utc": "2026-10-01T17:25:01.338263+00:00",
+  "stripe_sample_sha": "ee4b2cf9e1d4a2a1c5670b266a4cb97a3d9420f8",
+  "lockfile_sha256": "0f00a04dbb5bf09b122c77a72ffcf8c5047036ec1204d0fe9ed0a6788722d85f",
+  "server_sha256": "2816b181bacffc70c6040e7f3a7ec49d8d509331c731946d2292c4b1ad5a2c37",
+  "buyer_sha256": "cd1a7cfad46ddfd4c8b28b7c0149480b65d9bc383eb13ef4779a3528e4a0f118",
+  "mppx_version": "0.9.2",
+  "stripe_sdk_version": "22.6.2",
+  "stripe_api_version": "2026-07-29.preview",
+  "node_version": "v23.4.0",
+  "pnpm_version": "10.6.2",
+  "stripe_mode": "test",
+  "transport": "localhost HTTP"
+}

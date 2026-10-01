@@ -1,0 +1,154 @@
+{
+  "url": "http://127.0.0.1:64539",
+  "discovery": {
+    "found": true,
+    "valid": true,
+    "endpoints": [
+      {
+        "method": "POST",
+        "path": "/paid"
+      }
+    ],
+    "checks": [
+      {
+        "label": "Document found and parseable",
+        "severity": "pass"
+      },
+      {
+        "label": "Valid OpenAPI structure",
+        "severity": "pass"
+      },
+      {
+        "label": "Paid endpoints found",
+        "detail": "1 endpoint(s)",
+        "severity": "pass"
+      }
+    ],
+    "doc": {
+      "info": {
+        "title": "CheckoutGym MPP baseline",
+        "version": "1.0.0"
+      },
+      "openapi": "3.1.0",
+      "paths": {
+        "/paid": {
+          "post": {
+            "responses": {
+              "200": {
+                "description": "Successful response"
+              },
+              "402": {
+                "description": "Payment Required"
+              }
+            },
+            "x-payment-info": {
+              "offers": [
+                {
+                  "amount": "50",
+                  "currency": "usd",
+                  "intent": "charge",
+                  "method": "stripe"
+                }
+              ]
+            },
+            "summary": "Returns one paid JSON artifact",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Optional JSON request data.",
+              "required": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/paid",
+      "challenge": [
+        {
+          "label": "Returns 402 without credentials",
+          "severity": "pass"
+        },
+        {
+          "label": "WWW-Authenticate header present",
+          "detail": "Payment scheme",
+          "severity": "pass"
+        },
+        {
+          "label": "Challenge parseable",
+          "detail": "stripe/charge",
+          "severity": "pass"
+        },
+        {
+          "label": "Challenge has id",
+          "severity": "pass"
+        },
+        {
+          "label": "Challenge has realm",
+          "severity": "pass"
+        },
+        {
+          "label": "Challenge expires in the future",
+          "detail": "5m from now",
+          "severity": "pass"
+        },
+        {
+          "label": "Realm matches server hostname",
+          "severity": "pass"
+        },
+        {
+          "label": "Amount is valid integer string",
+          "severity": "pass"
+        },
+        {
+          "label": "Valid currency code",
+          "detail": "USD",
+          "severity": "pass"
+        },
+        {
+          "label": "Has networkId",
+          "detail": "profile_test_61U92KW",
+          "severity": "pass"
+        },
+        {
+          "label": "Has paymentMethodTypes",
+          "detail": "card, link",
+          "severity": "pass"
+        }
+      ],
+      "errorHandling": [
+        {
+          "label": "Malformed credential returns 402",
+          "detail": "not 500",
+          "severity": "pass"
+        },
+        {
+          "label": "Error response includes fresh challenge",
+          "severity": "pass"
+        }
+      ],
+      "payment": [
+        {
+          "label": "Payment [stripe]",
+          "detail": "non-interactive mode, use --yes to approve",
+          "severity": "skip"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "warnings": 0,
+    "skipped": 1
+  },
+  "suggestions": []
+}

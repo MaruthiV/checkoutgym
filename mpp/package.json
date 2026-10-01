@@ -1,0 +1,32 @@
+{
+  "name": "checkoutgym-mpp-baseline",
+  "private": true,
+  "type": "module",
+  "description": "MPP REST API sample with Stripe Payment Tokens using Hono",
+  "scripts": {
+    "dev": "tsx main.ts",
+    "build": "tsc --noEmit",
+    "buyer": "tsx buyer.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "dotenv": "^18.0.4",
+    "hono": "^4.13.1",
+    "mppx": "^0.9.2",
+    "stripe": "^22.6.2",
+    "viem": "^2.56.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

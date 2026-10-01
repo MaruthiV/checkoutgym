@@ -1,0 +1,11 @@
+# MPP test-mode baseline, October 1, 2026
+
+This run pins the Stripe [TypeScript sample](https://github.com/stripe-samples/machine-payments/tree/ee4b2cf9e1d4a2a1c5670b266a4cb97a3d9420f8/mpp/server/node-typescript) at `ee4b2cf9e1d4a2a1c5670b266a4cb97a3d9420f8`, mppx 0.9.2, Stripe SDK 22.6.2, Node 23.4.0, pnpm 10.6.2, and Stripe API `2026-07-29.preview`. Exact code and lockfile hashes are in [manifest.json](manifest.json). The source and one-command runner are in [mpp/](../../../mpp/README.md) and [scripts/mpp_baseline.py](../../../scripts/mpp_baseline.py).
+
+In the verified no-fault run, a buyer with one test SPT received one 402 challenge, used the SPT once, and received HTTP 200 plus the expected JSON artifact. The receipt's PaymentIntent reference matched a Stripe test-mode PaymentIntent with `status=succeeded`, `amount=50` cents, and `currency=usd`. [trace.json](trace.json) records the artifact, its hash, and matching hashes of the receipt and Stripe payment identifiers; it contains no SPT or merchant key.
+
+The pinned `mppx validate` ran against the local server. [validator.json](validator.json) reports **16 checks passed, 0 failed, 1 skipped**. Discovery, challenge format, and malformed-credential handling passed. Its separate payment check was skipped in noninteractive mode because the Stripe CLI was not installed. The scripted buyer and Stripe PaymentIntent lookup independently exercised and verified a real test-mode SPT payment.
+
+The first exploratory attempt delivered the paid artifact but failed our buyer's receipt parsing: we expected a `Payment ` prefix, while mppx uses a bare base64url `Payment-Receipt` value. We corrected the buyer to use `Receipt.fromResponse`; the second run passed. A third run added assertions for the test token's $0.50 cap, receipt status, and Stripe PaymentIntent metadata. This published trace is that final verified run. All three created succeeded 50-cent test-mode PaymentIntents. The first failure was a harness error, not an MPP recovery finding.
+
+This baseline does not test response loss, replay after loss, client restart, delivery recovery, or cross-buyer access. Those questions remain at the next task gate. No Kernel or Ramp endpoint was tested.

@@ -57,6 +57,10 @@ Also: the SPT preview header is on Stripe's concepts page and missing from the A
 
 Mock merchant, Stripe test mode, N=120, two repetitions per cell, one night. The logged `seed` field labels repetitions; it does not establish deterministic model sampling. Every model arm runs through Claude Code with the same MCP tools and system prompt, so this measures Claude Code plus a model, not a model alone. The user is a scripted stub with one answer per scenario. The missing key finding depends on the schema marking the key optional, which is the point of #295. No GPT arm yet.
 
+## MPP follow-up in progress
+
+The [pinned Stripe MPP reference flow](mpp/README.md) now completes a no-fault $0.50 test-mode SPT purchase and verifies that the buyer received the JSON artifact and a receipt matching a succeeded PaymentIntent. [The redacted baseline record](results/published/mpp-baseline-2026-10-01/README.md) includes versions, hashes, and validator results. Interrupted delivery and safe recovery have not been tested yet.
+
 ## run it
 
 ```

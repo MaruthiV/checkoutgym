@@ -1,0 +1,18 @@
+{
+  "challenge_count": 1,
+  "token_factory_calls": 1,
+  "client_status": 200,
+  "artifact": {
+    "artifact_id": "fixture-v1",
+    "data": "paid-json-v1"
+  },
+  "artifact_sha256": "9fa271e7b65e5caf3b596ea890ba3d5c7f514350174d3f07a534a6935192042b",
+  "receipt_payment_intent_sha256": "1b67d84d81d8ce380f95505ba9742344e5b5d1fecbebdf54da01ed62df38b1a2",
+  "stripe_payment_intent_sha256": "1b67d84d81d8ce380f95505ba9742344e5b5d1fecbebdf54da01ed62df38b1a2",
+  "stripe_payment_status": "succeeded",
+  "stripe_amount_cents": 50,
+  "stripe_currency": "usd",
+  "stripe_livemode": false,
+  "stripe_machine_payment_metadata": "true",
+  "buyer_received_merchant_key": false
+}
