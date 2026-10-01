@@ -1,0 +1,48 @@
+{
+  "client_error": "TypeError: fetch failed",
+  "credential_sha256": "8731ef4ffbdfdabdce4d9eb4786b498ea9ef4fd47cc825272a5a2c1df67da2cc",
+  "token_uses": 1,
+  "challenges": 1,
+  "same_credential_retry": {
+    "status": 402,
+    "received_artifact": false,
+    "received_receipt": false
+  },
+  "repeated_credential_retry": {
+    "status": 402,
+    "received_artifact": false,
+    "received_receipt": false
+  },
+  "changed_body_retry": {
+    "status": 402,
+    "received_artifact": false,
+    "received_receipt": false
+  },
+  "changed_route_retry": {
+    "status": 402,
+    "received_artifact": false,
+    "received_receipt": false
+  },
+  "fault": {
+    "barrier": "upstream 200 body complete, before downstream headers; downstream TCP connection destroyed",
+    "body_sha256": "9fa271e7b65e5caf3b596ea890ba3d5c7f514350174d3f07a534a6935192042b",
+    "upstream_receipt_present": true,
+    "happened_at": "2026-10-01T19:00:56.579Z"
+  },
+  "saved_artifact": {
+    "artifact_id": "fixture-v1",
+    "data": "paid-json-v1"
+  },
+  "saved_request_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "saved_route": "/paid",
+  "saved_at": "2026-10-01T19:00:56.566Z",
+  "saved_payment_intent_sha256": "b72cacadefac350b3bdd9cbde6ce1833a0cc953850e3b02679f3833d78b40a52",
+  "stripe_payment_intent_sha256": "b72cacadefac350b3bdd9cbde6ce1833a0cc953850e3b02679f3833d78b40a52",
+  "stripe_payment_status": "succeeded",
+  "stripe_amount_cents": 50,
+  "stripe_currency": "usd",
+  "stripe_livemode": false,
+  "stripe_machine_payment_metadata": "true",
+  "run_window_matching_payment_intents": 1,
+  "buyer_received_merchant_key": false
+}

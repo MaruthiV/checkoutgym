@@ -1,0 +1,15 @@
+{
+  "timestamp_utc": "2026-10-01T19:00:52.469537+00:00",
+  "stripe_sample_sha": "ee4b2cf9e1d4a2a1c5670b266a4cb97a3d9420f8",
+  "lockfile_sha256": "0f00a04dbb5bf09b122c77a72ffcf8c5047036ec1204d0fe9ed0a6788722d85f",
+  "server_sha256": "1284acd36fb8c00b7b910ac9a307127f05b126c62e54d80aab3e7467eeebe1ba",
+  "buyer_sha256": "a44f887b384a6be9b5251eeb468b592ef7e63a4fef12a0a972297c4563cdb20e",
+  "proxy_sha256": "40d0c1c3ccba998757e4b220e76bbf1035892e8d29e06a45dda064411e4a898b",
+  "mppx_version": "0.9.2",
+  "stripe_sdk_version": "22.6.2",
+  "stripe_api_version": "2026-07-29.preview",
+  "node_version": "v23.4.0",
+  "pnpm_version": "10.6.2",
+  "stripe_mode": "test",
+  "transport": "localhost HTTP proxy with downstream TCP reset before response headers"
+}

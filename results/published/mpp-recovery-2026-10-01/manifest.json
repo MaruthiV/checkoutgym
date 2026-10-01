@@ -1,0 +1,19 @@
+{
+  "timestamp_utc": "2026-10-01T20:20:09.715873+00:00",
+  "stripe_sample_sha": "ee4b2cf9e1d4a2a1c5670b266a4cb97a3d9420f8",
+  "lockfile_sha256": "0f00a04dbb5bf09b122c77a72ffcf8c5047036ec1204d0fe9ed0a6788722d85f",
+  "server_sha256": "a41ebafcf4931013bb84363e3da2e6c74fdbc0be4f2d8a93a44502af18d0233a",
+  "buyer_sha256": "3e219a1ff9097b99412fda26689de36bd186fd1dfbc5c120900d54e35f29039c",
+  "proxy_sha256": "05b36cf989508d293eb25466e17f09ba27979b3f1add93648a18e873650e87fd",
+  "screenshot_module_sha256": "a646027ad30f4f1618d22ad7be22dff2b6c40ec1ae3630e5b27e2f3523e08eef",
+  "fixture_sha256": "68e03a8d89e3883f32e18b8852013fab37f4b6b31d28a50fb48e7bf8d25cb38c",
+  "chrome_version": "Google Chrome 154.0.8037.58",
+  "mppx_version": "0.9.2",
+  "stripe_sdk_version": "22.6.2",
+  "stripe_api_version": "2026-07-29.preview",
+  "node_version": "v23.4.0",
+  "pnpm_version": "10.6.2",
+  "stripe_mode": "test",
+  "transport": "localhost HTTP proxy with downstream TCP reset before paid response headers",
+  "restart": "buyer and merchant restarted before authenticated result lookup"
+}

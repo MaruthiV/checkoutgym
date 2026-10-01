@@ -1,0 +1,9 @@
+{
+  "setup": "synthetic local state fixture; no Stripe API call or payment",
+  "operation_id_sha256": "2d825fe1f620c7d89ebdf83c9605ab9e49dd390c2dbc9c5a7618d1a243f945e0",
+  "status_before": "payment_unknown",
+  "original_buyer_result_status": 202,
+  "original_buyer_retry_pay_status": 202,
+  "different_buyer_result_status": 404,
+  "stripe_calls": 0
+}

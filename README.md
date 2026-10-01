@@ -1,5 +1,7 @@
 # CheckoutGym
 
+**New MPP result:** In a pinned Stripe test-mode paid task, a TCP reset after payment left the buyer with no result or receipt; replaying its credential returned 402. An [operation/result merchant recipe](mpp/RECOVERY.md) now lets the original authenticated buyer recover the saved browser screenshot and receipt after a restart without another payment. The [before/after trace, screenshot, and controls](results/published/mpp-recovery-2026-10-01/README.md) include a different buyer, changed input, and a separate intentional same-input purchase. This is an application integration pattern, not a claimed Stripe SDK defect; a crash before local result persistence remains unresolved.
+
 ![agent had a bad day, by reason](results/published/matrix-real-3models-2026-09-08-rescored-2026-10-01/chart.svg)
 
 LLM shopping agents as clients of the Agentic Commerce Protocol, against a mock merchant that follows the spec, holding a real Stripe test-mode payment token capped at the budget. Twelve checkout scenarios, including failures and a valid optional-coupon path. Every event is a log line and the scoring is mechanical, no LLM judge.
@@ -57,9 +59,9 @@ Also: the SPT preview header is on Stripe's concepts page and missing from the A
 
 Mock merchant, Stripe test mode, N=120, two repetitions per cell, one night. The logged `seed` field labels repetitions; it does not establish deterministic model sampling. Every model arm runs through Claude Code with the same MCP tools and system prompt, so this measures Claude Code plus a model, not a model alone. The user is a scripted stub with one answer per scenario. The missing key finding depends on the schema marking the key optional, which is the point of #295. No GPT arm yet.
 
-## MPP follow-up in progress
+## MPP paid-task recovery
 
-The [pinned Stripe MPP reference flow](mpp/README.md) now completes a no-fault $0.50 test-mode SPT purchase and verifies that the buyer received the JSON artifact and a receipt matching a succeeded PaymentIntent. [The redacted baseline record](results/published/mpp-baseline-2026-10-01/README.md) includes versions, hashes, and validator results. Interrupted delivery and safe recovery have not been tested yet.
+The [pinned Stripe MPP reference flow](mpp/README.md) completes a no-fault $0.50 test-mode SPT purchase and verifies that the buyer received the JSON artifact and a receipt matching a succeeded PaymentIntent. [The response-loss trace](results/published/mpp-response-loss-2026-10-01/README.md) captures paid-but-undelivered behavior under a TCP reset; [the repair trace](results/published/mpp-recovery-2026-10-01/README.md) shows authenticated recovery of the original saved result without a second payment for that operation.
 
 ## run it
 

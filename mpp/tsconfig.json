@@ -7,5 +7,5 @@
     "skipLibCheck": true,
     "strict": true
   },
-  "include": ["main.ts", "buyer.ts"]
+  "include": ["main.ts", "buyer.ts", "response_loss_buyer.ts", "response_loss_proxy.ts", "recovery_server.ts", "recovery_buyer.ts", "screenshot.ts"]
 }
