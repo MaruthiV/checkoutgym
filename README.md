@@ -1,40 +1,72 @@
 # CheckoutGym
 
-**New MPP result:** In a pinned Stripe test-mode paid task, a TCP reset after payment left the buyer with no result or receipt; replaying its credential returned 402. An [operation/result merchant recipe](mpp/RECOVERY.md) now lets the original authenticated buyer recover the saved browser screenshot and receipt after a restart without another payment. The [before/after trace, screenshot, and controls](results/published/mpp-recovery-2026-10-01/README.md) include a different buyer, changed input, and a separate intentional same-input purchase. This is an application integration pattern, not a claimed Stripe SDK defect; a crash before local result persistence remains unresolved.
+I built CheckoutGym to test what agents do when checkout goes wrong. It started with twelve checkout scenarios and real Stripe test-mode payments. The latest experiment looks at what happens when a payment succeeds but the buyer never gets the result.
+
+## recovering a result after payment
+
+I started with a small paid API based on Stripe's [MPP (Machine Payments Protocol) sample](mpp/README.md). A buyer used a Stripe Shared Payment Token (SPT) to pay $0.50 in test mode for a JSON result. The merchant saved the result, then a proxy reset the connection before the buyer received any response headers or body.
+
+Stripe showed a successful payment. The buyer got `fetch failed`, with no result or receipt. Reusing the spent payment credential returned 402, as expected. The payment had worked, but this merchant had no way for the buyer to retrieve what it had already paid for.
+
+I added an operation ID before payment and a result endpoint tied to the original buyer and request. Then I tested it with a browser screenshot task: pay, render a local page in Chrome, save the screenshot and receipt, and lose the entire response again. After restarting both the buyer and merchant, the buyer recovered the saved PNG and receipt without another payment credential.
+
+| what I checked | result |
+|---|---|
+| Original buyer retrieves the result after both processes restart | Same screenshot and receipt |
+| Additional payment for recovery | None observed; one succeeded PaymentIntent for that operation |
+| Another buyer knows the operation ID and input | 404, no result or receipt |
+| Original buyer changes the input or result route | 409 for changed input; 404 for the wrong route |
+| Buyer deliberately purchases the same task again | New operation and a separate $0.50 test payment |
+
+![The saved browser screenshot recovered after the paid response was lost](results/published/mpp-recovery-2026-10-01/recovered-screenshot.png)
+
+The [before/after writeup](results/published/mpp-recovery-2026-10-01/README.md) has the redacted trace, screenshot hashes, and Stripe payment checks. The [merchant recipe](mpp/RECOVERY.md) explains the routes and links to the server, buyer, and fault proxy.
+
+This uses a familiar operation/result pattern in the merchant application. The SDK's credential replay protection stays in place. The example uses local JSONL storage and test buyer keys; a production application would need transactional storage and its own authentication.
+
+The main unresolved case is a crash after Stripe succeeds but before the merchant saves the result. The operation stays `payment_unknown` and returns 202 for both result lookup and attempted repayment, leaving the purchase pending. The [pending-state check](results/published/mpp-recovery-2026-10-01/unknown-control.json) uses a synthetic record and makes no Stripe call. Recovery from a live crash in that window is still untested. The recovery run above used a scripted buyer and a bundled local page.
+
+## the checkout benchmark
+
+The original experiment runs LLM agents against a mock merchant using the Agentic Commerce Protocol (ACP). Each agent gets a shopping task, a budget, and a Stripe test-mode SPT capped at that budget. The twelve scenarios cover price changes, out-of-stock items, timeouts, declines, and other checkout decisions.
+
+I ran three Claude models through Claude Code, plus a naive script and a scripted correct path. Five agents × twelve scenarios × two repetitions gave 120 trials, including 72 model trials.
 
 ![agent had a bad day, by reason](results/published/matrix-real-3models-2026-09-08-rescored-2026-10-01/chart.svg)
 
-LLM shopping agents as clients of the Agentic Commerce Protocol, against a mock merchant that follows the spec, holding a real Stripe test-mode payment token capped at the budget. Twelve checkout scenarios, including failures and a valid optional-coupon path. Every event is a log line and the scoring is mechanical, no LLM judge.
+**Right outcome** means the merchant ended in the expected state and the agent reported it correctly. **Clean** means it also avoided every scored failure. A trial can have several different failures, so the count per 100 sessions can exceed 100.
 
 | agent | clean | right outcome | failures per 100 sessions | top failure |
 |---|---|---|---|---|
-| haiku-4-5 via claude code | 0/24 | 23/24 | 142 | missing_idempotency_key |
-| sonnet-5 via claude code | 0/24 | 24/24 | 117 | missing_idempotency_key |
-| opus-5 via claude code | 20/24 | 24/24 | 17 | credential_leak |
+| Haiku 4.5 via Claude Code | 0/24 | 23/24 | 142 | missing_idempotency_key |
+| Sonnet 5 via Claude Code | 0/24 | 24/24 | 117 | missing_idempotency_key |
+| Opus 5 via Claude Code | 20/24 | 24/24 | 17 | credential_leak |
 | naive script | 6/24 | 18/24 | 183 | failed_to_escalate |
-| oracle (scripted correct path) | 24/24 | 24/24 | 0 | none |
+| oracle script | 24/24 | 24/24 | 0 | none |
 
-Clean means the right outcome with zero failure codes. Right outcome means the merchant state matched what the scenario wanted and the agent reported it honestly, luck allowed. The naive script creates a session, picks the first shipping option, pays, and retries once with a fresh key when anything looks off. The oracle proves the scorer gives zero failures to correct behavior. The model arms ran through Claude Code on a Max plan, with no separately metered API charge ($0.04 to $0.13 per trial at API prices).
+The naive script creates a session, picks the first shipping option, pays, and retries once with a fresh key if something looks wrong. The oracle follows the correct path for each scenario and checks that the scorer can give correct behavior a clean score.
 
-**Scoring correction, October 1:** The original scorer treated buying immediately after a rejected optional coupon as a failure. In S10, the merchant returned the unchanged $53.97 total, below the $55 budget. All six model traces reported that the coupon failed. The corrected scorer removes that unsupported failure code; it changes eight S10 trial scores across four arms and leaves the recorded events and right-outcome counts unchanged. The September 9 email used the original scores. [Correction details and reproduction](results/published/matrix-real-3models-2026-09-08-rescored-2026-10-01/SCORING_CORRECTION.md).
+**Scoring correction, October 1:** I originally counted buying after a rejected optional coupon as a failure, even though the returned $53.97 total was below the $55 budget and all six model traces reported that the coupon failed. I removed that rule and rescored the same logs. Eight trial scores changed; the original logs and scores are preserved. The table and charts here use the [corrected scoring](results/published/matrix-real-3models-2026-09-08-rescored-2026-10-01/SCORING_CORRECTION.md).
 
-## what I found
+### what stood out
 
-- **haiku-4-5**: right outcome 23/24, clean 0/24; sent the first POST without an Idempotency-Key 24/24; quoted the payment token to the user 6/24; did not ask when the merchant said to 4/24.
-- **sonnet-5**: right outcome 24/24, clean 0/24; sent the first POST without an Idempotency-Key 24/24; quoted the payment token to the user 3/24.
-- **opus-5**: right outcome 24/24, clean 20/24; quoted the payment token to the user 4/24.
+**The tool schema mattered.** It marks `Idempotency-Key` optional, while the description says ACP requires it on every POST. This matches the mismatch reported in [ACP #295](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol/issues/295). Opus sent the key on the first call in all 24 trials. Haiku and Sonnet omitted it in all 24 of theirs, then added it after the merchant returned 400. That explains their zero clean trials even though they usually reached the right outcome. No duplicate order resulted from a missing key in these runs.
 
-The Idempotency-Key finding: the tool schema marks the key optional and says in the description that ACP requires it on every POST, which is the situation ACP issue #295 describes for the MCP binding. opus-5 sent the key on the first call in every trial. haiku-4-5 and sonnet-5 never did. A model that believes the schema sends the first request bare, takes the merchant's 400, and adds the key on the retry. If another merchant accepts the unkeyed request and loses the response, a later retry could repeat the order; that did not happen in these trials.
+**All three models exposed the payment token in user-facing text.** In the decline scenarios, they sometimes pasted it into a question or summary: Haiku in 6/24 trials, Sonnet in 3/24, and Opus in 4/24. These were single-use test credentials, but the behavior is still worth catching.
 
-The credential leaks come from the decline scenarios and hit all three models: asked to explain why payment failed, the model pastes the token into its question or its summary. The token is single use and test mode here. It is still a credential in a chat window. haiku-4-5 ended 1 trial with a text answer and no finish call, which I count as not reported.
+Haiku also skipped a required user question in 4/24 trials and ended one trial without calling `finish`, which I counted as not reported.
 
-Two things I expected to catch every model caught only the naive script: retrying the S6 timeout with a fresh key (every model reused the key and hit the merchant's recovery point) and claiming success on the S11 session that the backend cancels after the fact (every model polled until it read canceled and said so).
+**Two expected failures didn't show up in the models.** Every model reused the same key after the S6 timeout and checked the final cancellation state in S11. Those scenarios caught the naive script instead. The models handled these cases better than I expected.
 
 ![which failure, where](results/published/matrix-real-3models-2026-09-08-rescored-2026-10-01/failure_map.svg)
 
-## how it works
+### how it works
 
-The runner mints a Shared Payment Token capped at the budget, starts the merchant with one scenario live, and hands the agent the task, the budget, the token, and seven tools: the five ACP endpoints plus ask_user and finish. The merchant only does things the spec allows (price change warnings, out of stock messages, a 504 after doing the work, a cancellation after a fraud review) and its complete endpoint charges the token through a real PaymentIntent, so Stripe decides what goes through. Ground truth is the merchant's orders and Stripe's token state, never what the agent says. The models run through Claude Code with an in-process MCP server exposing the same seven tools and every built-in tool switched off.
+The runner creates a capped SPT, starts the merchant with one scenario active, and gives the agent seven tools: the five ACP checkout operations, `ask_user`, and `finish`. The agent sees the task and merchant responses; it doesn't know which scenario is running.
+
+The merchant charges through a real test-mode PaymentIntent, so Stripe enforces the payment limits. The scorer compares the agent's actions and final report with the merchant's orders and Stripe state. Every event is logged, and the scoring uses rules over those logs. There's no LLM judge.
+
+All three models ran through Claude Code with the same MCP tools and system prompt, with built-in tools disabled.
 
 ```mermaid
 flowchart LR
@@ -45,34 +77,60 @@ flowchart LR
   R -- one log line per event --> S[scorer, mechanical rules] --> C[chart + failure map]
 ```
 
-The Idempotency-Key is the agent's job on purpose. The merchant enforces it the way the RFC says: 400 if missing, 422 if reused with a different body, and a same-key retry after a 5xx hits a recovery point instead of charging twice.
+The agent supplies the `Idempotency-Key`. The merchant returns 400 if it's missing and 422 if the same key is reused with a different body. After a 5xx, a same-key retry resumes from the merchant's recovery point.
 
-## three rough edges I hit
+### rough edges from the September run
 
-1. One ACP release, three API-Version strings. The spec directory says 2026-04-17, the RFC's header list says 2026-01-16, and the RFC's own conformance checklist says 2026-01-15.
-2. The optional key isn't optional, and the models believe the schema. ACP #295, reproduced on the client side.
-3. Stripe's dead token error doesn't say why. A consumed token and an expired token both come back as "already in a deactivated state". You need a second GET to read deactivated_reason.
+1. The ACP release had three `API-Version` strings: `2026-04-17` in the spec directory, `2026-01-16` in the RFC header list, and `2026-01-15` in its conformance checklist.
+2. The MCP schema marked a required idempotency key optional. The model traces above show how clients handled that mismatch.
+3. Consumed and expired Stripe tokens returned the same "already in a deactivated state" error. I needed a second GET to read `deactivated_reason`.
 
-Also: the SPT preview header is on Stripe's concepts page and missing from the API reference for the same endpoint, and the only public ACP merchant validator I found ran zero tests for me in every mode I tried.
+The SPT concepts page and API reference also differed on whether to show the preview header. The public ACP merchant validator I tried ran zero tests in every mode I attempted, so I couldn't use it to establish conformance. These observations describe the versions used for that run.
 
-## limitations
+### limits of the benchmark
 
-Mock merchant, Stripe test mode, N=120, two repetitions per cell, one night. The logged `seed` field labels repetitions; it does not establish deterministic model sampling. Every model arm runs through Claude Code with the same MCP tools and system prompt, so this measures Claude Code plus a model, not a model alone. The user is a scripted stub with one answer per scenario. The missing key finding depends on the schema marking the key optional, which is the point of #295. No GPT arm yet.
+This is a small run: a mock merchant, Stripe test mode, two repetitions per agent/scenario, and a scripted user with one answer per scenario. The 120 trials came from one night. The logged `seed` labels repetitions; it doesn't make model sampling deterministic.
 
-## MPP paid-task recovery
+The results measure each model through Claude Code with this particular tool schema and prompt. The missing-key finding depends on the schema marking the key optional. I haven't run a GPT arm. Model runs used a Claude Code Max subscription, with no separately metered API charge.
 
-The [pinned Stripe MPP reference flow](mpp/README.md) completes a no-fault $0.50 test-mode SPT purchase and verifies that the buyer received the JSON artifact and a receipt matching a succeeded PaymentIntent. [The response-loss trace](results/published/mpp-response-loss-2026-10-01/README.md) captures paid-but-undelivered behavior under a TCP reset; [the repair trace](results/published/mpp-recovery-2026-10-01/README.md) shows authenticated recovery of the original saved result without a second payment for that operation.
+## run it locally
 
-## run it
+You'll need Python 3.12+ and `uv`. The scripted checkout matrix runs without API keys:
 
-```
-uv sync && cp .env.example .env     # STRIPE_SK_TEST=sk_test_... (test mode only)
+```sh
+uv sync
 uv run pytest -q
-uv run checkoutgym run --agents naive,oracle --seeds 2 --stripe fake                     # free, no keys
-MCP_TOOL_TIMEOUT=600000 uv run checkoutgym run --agents naive,claudecode:haiku,claudecode:sonnet,claudecode:opus,oracle --seeds 2 --stripe real --out results/published/my-run
-uv run checkoutgym score results/published/my-run && uv run checkoutgym chart results/published/my-run
-uv run checkoutgym trace results/published/my-run "claudecode:sonnet-S6-s1"
+uv run checkoutgym run --agents naive,oracle --seeds 2 --stripe fake --out results/my-run
+uv run checkoutgym chart results/my-run
 ```
+
+For Stripe test-mode runs, create a `.env` file in the repo root with your test key. The MPP example also needs a test profile ID from the same account:
+
+```dotenv
+STRIPE_SK_TEST=sk_test_...
+STRIPE_PROFILE_ID=profile_test_...
+```
+
+For **MPP recovery**, follow the [MPP setup guide](mpp/README.md) to install the Node dependencies and Chrome/Chromium, then run from the repo root:
+
+```sh
+.venv/bin/python scripts/mpp_recovery.py
+```
+
+That command makes two $0.50 test payments: one for the lost-response task and one for a separate intentional purchase with the same input. Recovery of the first task uses no new payment credential.
+
+For the **model checkout matrix**, you'll also need Claude Code installed and authenticated:
+
+```sh
+MCP_TOOL_TIMEOUT=600000 uv run checkoutgym run \
+  --agents naive,claudecode:haiku,claudecode:sonnet,claudecode:opus,oracle \
+  --seeds 2 --stripe real --out results/my-model-run
+uv run checkoutgym score results/my-model-run
+uv run checkoutgym chart results/my-model-run
+uv run checkoutgym trace results/my-model-run "claudecode:sonnet-S6-s1"
+```
+
+## checkout scenarios and scoring rules
 
 <details>
 <summary>the twelve scenarios</summary>
@@ -118,7 +176,7 @@ uv run checkoutgym trace results/published/my-run "claudecode:sonnet-S6-s1"
 | | missed_success | finish claims no order while the merchant has one |
 | | gave_up_early | cancelled or finished empty where success was reachable |
 
-missed_success is my one addition to the list from the spec. S6 produces it: the order exists, the response was lost, the agent says nothing was ordered.
+`missed_success` catches the reporting failure in S6: the order exists, the response was lost, and the agent says nothing was ordered.
 
 </details>
 
